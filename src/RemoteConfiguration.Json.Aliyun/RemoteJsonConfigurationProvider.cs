@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using Aliyun.OSS;
 using Microsoft.Extensions.Configuration;
+using RemoteConfiguration.Abstractions;
 
 namespace RemoteConfiguration.Json.Aliyun;
 

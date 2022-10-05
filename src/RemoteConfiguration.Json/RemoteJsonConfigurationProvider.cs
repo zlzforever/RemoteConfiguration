@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
+using RemoteConfiguration.Abstractions;
 
 namespace RemoteConfiguration.Json;
 

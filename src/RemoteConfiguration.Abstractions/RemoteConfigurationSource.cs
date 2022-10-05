@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace RemoteConfiguration;
+namespace RemoteConfiguration.Abstractions;
 
 public abstract class RemoteConfigurationSource : IConfigurationSource
 {

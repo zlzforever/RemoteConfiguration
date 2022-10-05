@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
 
-namespace RemoteConfiguration;
+namespace RemoteConfiguration.Abstractions;
 
 public abstract class RemoteConfigurationProvider
     : ConfigurationProvider, IDisposable

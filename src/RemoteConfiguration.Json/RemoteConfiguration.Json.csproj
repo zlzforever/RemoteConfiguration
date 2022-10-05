@@ -5,10 +5,10 @@
         <AssemblyName>RemoteConfiguration.Json</AssemblyName>
         <RootNamespace>RemoteConfiguration.Json</RootNamespace>
     </PropertyGroup>
-    <Import Project="../../package.props"/>
+    <Import Project="../../package.props" />
 
     <ItemGroup>
-        <ProjectReference Include="..\RemoteConfiguration\RemoteConfiguration.csproj" />
+        <ProjectReference Include="..\RemoteConfiguration.Abstractions\RemoteConfiguration.Abstractions.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using RemoteConfiguration.Abstractions;
 
 namespace RemoteConfiguration.Json.Aliyun;
 

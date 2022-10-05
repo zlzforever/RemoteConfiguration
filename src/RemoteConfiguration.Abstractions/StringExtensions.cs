@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace RemoteConfiguration;
+namespace RemoteConfiguration.Abstractions;
 
 public static class StringExtensions
 {

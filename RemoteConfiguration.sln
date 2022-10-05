@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteConfiguration", "src\RemoteConfiguration\RemoteConfiguration.csproj", "{8210F7F0-112A-46A7-A523-4EC1939CB4B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteConfiguration.Abstractions", "src\RemoteConfiguration.Abstractions\RemoteConfiguration.Abstractions.csproj", "{8210F7F0-112A-46A7-A523-4EC1939CB4B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteConfiguration.Json", "src\RemoteConfiguration.Json\RemoteConfiguration.Json.csproj", "{F93782C2-872E-40C7-924B-4C72A3A1C366}"
 EndProject

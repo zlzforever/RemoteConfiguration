@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <PackageId>RemoteConfiguration.Abstractions</PackageId>
+    </PropertyGroup>
+    <Import Project="../../package.props" />
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
+    </ItemGroup>
+</Project>
