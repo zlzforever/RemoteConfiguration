@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <PackageId>RemoteConfiguration.Json.Aliyun</PackageId>
+        <AssemblyName>RemoteConfiguration.Json.Aliyun</AssemblyName>
+        <RootNamespace>RemoteConfiguration.Json.Aliyun</RootNamespace>
+    </PropertyGroup>
+    <Import Project="../../package.props"/>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RemoteConfiguration\RemoteConfiguration.csproj" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
+    </ItemGroup>
+</Project>
