@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\RemoteConfiguration.Abstractions\RemoteConfiguration.Abstractions.csproj" />
+        <ProjectReference Include="..\RemoteConfiguration.Json\RemoteConfiguration.Json.csproj" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Aliyun.OSS.SDK.NetCore" Version="2.13.0" />

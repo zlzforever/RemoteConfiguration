@@ -1,7 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using Microsoft.Extensions.Configuration;
-using RemoteConfiguration.Json;
 using RemoteConfiguration.Json.Aliyun;
 
 var builder = new ConfigurationBuilder();

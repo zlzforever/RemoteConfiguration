@@ -7,16 +7,21 @@ public static class Extensions
 {
     public static IConfigurationBuilder AddRemoteJsonFile(
         this IConfigurationBuilder builder,
-        string url, bool optional = true, bool reloadOnChange = true)
+        string uri, bool optional = true, bool reloadOnChange = true)
     {
-        if (string.IsNullOrEmpty(url))
+        if (builder == null)
         {
-            throw new ArgumentException(nameof(url));
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (string.IsNullOrEmpty(uri))
+        {
+            throw new ArgumentNullException(nameof(uri));
         }
 
         return builder.Add(new RemoteJsonConfigurationSource
         {
-            Url = url,
+            UriProducer = () => new Uri(uri),
             Optional = optional,
             ReloadOnChange = reloadOnChange
         });

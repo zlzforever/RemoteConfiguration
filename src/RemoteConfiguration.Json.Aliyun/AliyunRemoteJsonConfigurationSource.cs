@@ -1,9 +1,8 @@
 using Microsoft.Extensions.Configuration;
-using RemoteConfiguration.Abstractions;
 
 namespace RemoteConfiguration.Json.Aliyun;
 
-public class RemoteJsonConfigurationSource : RemoteConfigurationSource
+public class AliyunRemoteJsonConfigurationSource : RemoteJsonConfigurationSource
 {
     public string Endpoint { get; set; }
     public string AccessKeyId { get; set; }
@@ -13,7 +12,7 @@ public class RemoteJsonConfigurationSource : RemoteConfigurationSource
 
     public override IConfigurationProvider Build(IConfigurationBuilder builder)
     {
-        return new RemoteJsonConfigurationProvider(new RemoteJsonConfigurationSource
+        return new RemoteJsonConfigurationProvider(new AliyunRemoteJsonConfigurationSource
         {
             Optional = Optional,
             ReloadDelay = ReloadDelay,

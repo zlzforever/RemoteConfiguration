@@ -1,9 +1,12 @@
+using System;
 using Microsoft.Extensions.Configuration;
 
 namespace RemoteConfiguration.Abstractions;
 
 public abstract class RemoteConfigurationSource : IConfigurationSource
 {
+    public Func<Uri> UriProducer { get; set; }
+
     /// <summary>Determines if loading the file is optional.</summary>
     public bool Optional { get; set; }
 

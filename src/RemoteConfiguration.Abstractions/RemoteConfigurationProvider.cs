@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +16,8 @@ public abstract class RemoteConfigurationProvider
     private DateTime _lastCheckedTimeUtc;
     private readonly Timer _timer;
 
-    public static TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(4);
+    protected static readonly HttpClient HttpClient = new();
+    public static TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// The source settings for this provider.
@@ -65,7 +67,12 @@ public abstract class RemoteConfigurationProvider
         }, null, TimeSpan.Zero, TimeSpan.FromSeconds(4));
     }
 
-    protected abstract Stream GetStream();
+    protected virtual Stream GetStream()
+    {
+        var url = Source.UriProducer();
+        var bytes = HttpClient.GetByteArrayAsync(url).Result;
+        return new MemoryStream(bytes);
+    }
 
     /// <summary>
     /// Loads the contents of the file at <see cref="T:System.IO.Path" />.
