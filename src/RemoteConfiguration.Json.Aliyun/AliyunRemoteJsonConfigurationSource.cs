@@ -14,6 +14,7 @@ public class AliyunRemoteJsonConfigurationSource : RemoteJsonConfigurationSource
     {
         return new RemoteJsonConfigurationProvider(new AliyunRemoteJsonConfigurationSource
         {
+            UriProducer = UriProducer,
             Optional = Optional,
             ReloadDelay = ReloadDelay,
             ReloadOnChange = ReloadOnChange,

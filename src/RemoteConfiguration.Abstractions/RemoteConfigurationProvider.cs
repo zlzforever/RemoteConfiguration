@@ -1,30 +1,32 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
-using System.Security.Cryptography;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 
 namespace RemoteConfiguration.Abstractions;
 
 public abstract class RemoteConfigurationProvider
     : ConfigurationProvider, IDisposable
 {
-    private string _lastHash;
-    private DateTime _lastCheckedTimeUtc;
-    private readonly Timer _timer;
-
-    protected static readonly HttpClient HttpClient = new();
-    public static TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(30);
+    private Timer _timer;
+    private bool _timerInitialized;
+    private object _timerLock = new();
+    private byte[] _currentBytes = Array.Empty<byte>();
+    private readonly ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken> _pollingChangeTokens;
+    private static readonly HttpClient HttpClient = new();
+    private readonly Lazy<IDisposable> _changeTokenRegistration;
 
     /// <summary>
     /// The source settings for this provider.
     /// </summary>
     public RemoteConfigurationSource Source { get; }
 
-    public RemoteConfigurationProvider(RemoteConfigurationSource source)
+    protected RemoteConfigurationProvider(RemoteConfigurationSource source)
     {
         Source = source;
         if (!Source.ReloadOnChange)
@@ -32,71 +34,122 @@ public abstract class RemoteConfigurationProvider
             return;
         }
 
-        var md5 = MD5.Create();
-
-        _timer = new Timer(_ =>
+        _pollingChangeTokens = new ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken>();
+        _changeTokenRegistration = new Lazy<IDisposable>(() =>
         {
-            var currentTime = DateTime.UtcNow;
-            if (currentTime - _lastCheckedTimeUtc < PollingInterval)
-            {
-                return;
-            }
-
-            using var stream = GetStream();
-            var hash = md5.ComputeHash(stream).ToHex();
-            stream.Seek(0, SeekOrigin.Begin);
-            if (_lastHash != hash)
-            {
-                _lastHash = hash;
-                Thread.Sleep(Source.ReloadDelay);
-                try
+            return ChangeToken.OnChange(
+                () =>
                 {
-                    Load(stream);
-                }
-                catch
-                {
-                    Debug.Print("Load configuration failed.");
-                }
-            }
-            else
-            {
-                Debug.Print("Remote configuration is no changed.");
-            }
+                    LazyInitializer.EnsureInitialized(ref _timer, ref _timerInitialized, ref _timerLock, TimerFactory);
 
-            _lastCheckedTimeUtc = currentTime;
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(4));
+                    var pollingChangeToken = new PollingChangeToken(_currentBytes)
+                    {
+                        ReadByteArray = GetByteArray,
+                        ActiveChangeCallbacks = true,
+                        CancellationTokenSource = new CancellationTokenSource()
+                    };
+                    _pollingChangeTokens.TryAdd(pollingChangeToken, pollingChangeToken);
+
+                    return pollingChangeToken;
+                },
+                () =>
+                {
+                    Thread.Sleep(Source.ReloadDelay);
+                    Load(reload: true);
+                });
+        });
     }
 
-    protected virtual Stream GetStream()
+    protected virtual byte[] GetByteArray()
     {
         var url = Source.UriProducer();
         var bytes = HttpClient.GetByteArrayAsync(url).Result;
-        return new MemoryStream(bytes);
+        Debug.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} sync configuration");
+        return bytes;
     }
 
-    /// <summary>
-    /// Loads the contents of the file at <see cref="T:System.IO.Path" />.
-    /// </summary>
-    /// <exception cref="T:System.IO.DirectoryNotFoundException">Optional is <c>false</c> on the source and a
-    /// directory cannot be found at the specified Path.</exception>
-    /// <exception cref="T:System.IO.FileNotFoundException">Optional is <c>false</c> on the source and a
-    /// file does not exist at specified Path.</exception>
-    /// <exception cref="T:System.IO.InvalidDataException">An exception was thrown by the concrete implementation of the
-    /// <see cref="M:Microsoft.Extensions.Configuration.FileConfigurationProvider.Load" /> method. Use the source <see cref="P:Microsoft.Extensions.Configuration.FileConfigurationSource.OnLoadException" /> callback
-    /// if you need more control over the exception.</exception>
-    public override void Load() => Load(false);
+    public override void Load()
+    {
+        Load(false);
+        // ReSharper disable once UnusedVariable
+        var disposable = _changeTokenRegistration.Value;
+    }
 
     /// <summary>Loads this provider's data from a stream.</summary>
     /// <param name="stream">The stream to read.</param>
     public abstract void Load(Stream stream);
 
+    public void Dispose()
+    {
+        _changeTokenRegistration.Value.Dispose();
+        _timer?.Dispose();
+    }
+
+    private static void RaiseChangeEvents(object state)
+    {
+        // Iterating over a concurrent bag gives us a point in time snapshot making it safe
+        // to remove items from it.
+        var changeTokens = (ConcurrentDictionary<IPollingChangeToken, IPollingChangeToken>)state;
+        foreach (var item in changeTokens)
+        {
+            var token = item.Key;
+
+            if (!token.HasChanged)
+            {
+                continue;
+            }
+
+            if (!changeTokens.TryRemove(token, out _))
+            {
+                // Move on if we couldn't remove the item.
+                continue;
+            }
+
+            // We're already on a background thread, don't need to spawn a background Task to cancel the CTS
+            try
+            {
+                token.CancellationTokenSource.Cancel();
+            }
+            catch
+            {
+                // 
+            }
+        }
+    }
+
+    private Timer TimerFactory()
+    {
+        // Don't capture the current ExecutionContext and its AsyncLocals onto the timer
+        bool restoreFlow = false;
+        try
+        {
+            if (!ExecutionContext.IsFlowSuppressed())
+            {
+                ExecutionContext.SuppressFlow();
+                restoreFlow = true;
+            }
+
+            return new Timer(RaiseChangeEvents, _pollingChangeTokens, TimeSpan.Zero,
+                period: TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            // Restore the current ExecutionContext
+            if (restoreFlow)
+            {
+                ExecutionContext.RestoreFlow();
+            }
+        }
+    }
+
     private void Load(bool reload)
     {
-        using var stream = GetStream();
-        if (stream != null)
+        _currentBytes = GetByteArray();
+        if (_currentBytes is { Length: > 0 })
         {
             try
             {
+                using var stream = new MemoryStream(_currentBytes);
                 Load(stream);
             }
             catch
@@ -124,10 +177,5 @@ public abstract class RemoteConfigurationProvider
         }
 
         OnReload();
-    }
-
-    public void Dispose()
-    {
-        _timer?.Dispose();
     }
 }
